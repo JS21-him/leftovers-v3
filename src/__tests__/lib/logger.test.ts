@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 /// <reference types="jest" />
 
 import { logger } from '../../lib/logger';
