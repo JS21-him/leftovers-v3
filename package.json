@@ -33,7 +33,7 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "setupFilesAfterFramework": ["./jest.setup.ts"],
+    "setupFilesAfterEnv": ["./jest.setup.ts"],
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|react-navigation|@react-navigation/.*|@supabase/.*|nativewind|zustand)"
     ]
