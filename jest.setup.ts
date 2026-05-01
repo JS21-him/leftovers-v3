@@ -7,6 +7,20 @@ declare global {
 
 (global as any).__DEV__ = true;
 
+process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+
+// Mock localStorage for expo-sqlite/localStorage/install polyfill
+if (typeof (global as any).localStorage === 'undefined') {
+  const store: Record<string, string> = {};
+  (global as any).localStorage = {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { Object.keys(store).forEach(k => delete store[k]); },
+  };
+}
+
 // Mock Expo's __ExpoImportMetaRegistry to avoid "import outside scope" errors
 Object.defineProperty(global, '__ExpoImportMetaRegistry', {
   value: new Map(),
