@@ -22,7 +22,8 @@ import type { SavedRecipe } from '@/src/types/database';
 export default function RecipesScreen() {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
-  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const householdId = useAuthStore((s) => s.householdId);
+  const setHouseholdId = useAuthStore((s) => s.setHouseholdId);
   const [householdError, setHouseholdError] = useState<string | null>(null);
   const [showSuggestModal, setShowSuggestModal] = useState(false);
 

@@ -22,7 +22,8 @@ import type { ShoppingListItem } from '@/src/types/database';
 export default function ShoppingScreen() {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
-  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const householdId = useAuthStore((s) => s.householdId);
+  const setHouseholdId = useAuthStore((s) => s.setHouseholdId);
   const [householdError, setHouseholdError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
