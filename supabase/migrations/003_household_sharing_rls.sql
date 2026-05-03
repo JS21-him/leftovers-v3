@@ -8,7 +8,7 @@ create policy "profiles: household members read"
 -- Secure RPC: look up household id by invite code without exposing all households
 create or replace function get_household_id_by_code(code text)
 returns uuid
-language sql security definer stable
+language sql security definer stable set search_path = public
 as $$
   select id from households where invite_code = lower(trim(code)) limit 1;
 $$;
