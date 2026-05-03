@@ -1,4 +1,3 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -6,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -34,7 +33,6 @@ serve(async (req) => {
       });
     }
 
-    // Get household_id for this user
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('household_id')
@@ -48,7 +46,6 @@ serve(async (req) => {
       });
     }
 
-    // Fetch fridge items
     const { data: items, error: itemsError } = await supabase
       .from('fridge_items')
       .select('name, quantity')
@@ -103,12 +100,29 @@ Example format: [{"title":"...","ingredients":["..."],"instructions":"1. ...\\n2
       }),
     });
 
-    const aiData = await aiResponse.json();
-    const content: string = aiData.content?.[0]?.text ?? '';
+    const responseText = await aiResponse.text();
 
+    if (!aiResponse.ok) {
+      return new Response(JSON.stringify({ error: `AI API error: ${aiResponse.status} — ${responseText}` }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    let aiData: { content?: { text: string }[] };
+    try {
+      aiData = JSON.parse(responseText);
+    } catch {
+      return new Response(JSON.stringify({ error: `Failed to parse AI response: ${responseText.slice(0, 200)}` }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const content: string = aiData.content?.[0]?.text ?? '';
     const jsonMatch = content.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
-      return new Response(JSON.stringify({ error: 'Failed to parse AI response' }), {
+      return new Response(JSON.stringify({ error: `Could not extract recipes from: ${content.slice(0, 200)}` }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -119,8 +133,8 @@ Example format: [{"title":"...","ingredients":["..."],"instructions":"1. ...\\n2
     return new Response(JSON.stringify({ recipes }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch {
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+  } catch (err) {
+    return new Response(JSON.stringify({ error: `Internal server error: ${String(err)}` }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
