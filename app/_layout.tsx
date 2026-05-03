@@ -5,7 +5,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { supabase } from '@/src/lib/supabase/client';
 import { useAuthStore } from '@/src/store/auth';
-import '@/global.css';
+import { logger } from '@/src/lib/logger';
+import '../global.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,10 +18,17 @@ export default function RootLayout() {
   const { session, isLoading, setSession, setLoading } = useAuthStore();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+      })
+      .catch((err) => {
+        logger.error('getSession failed', err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
     const {
       data: { subscription },
