@@ -49,7 +49,7 @@ export interface SavedRecipe {
   id: string;
   household_id: string;
   title: string;
-  ingredients: unknown;
+  ingredients: string[];
   instructions: string | null;
   created_at: string;
 }
