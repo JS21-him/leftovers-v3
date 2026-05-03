@@ -6,7 +6,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { supabase } from '@/src/lib/supabase/client';
 import { useAuthStore } from '@/src/store/auth';
 import { logger } from '@/src/lib/logger';
-import '../global.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
