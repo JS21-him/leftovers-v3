@@ -51,7 +51,7 @@ create policy "household members can read profiles"
 5. Invalidate all query keys: fridge items, shopping items, saved recipes, household
 
 **`leaveHousehold(userId: string): Promise<void>`**
-1. Create new household: `name = "My Kitchen"`, `created_by = userId`, generate new `invite_code`
+1. Insert new household: `name = "My Kitchen"`, `created_by = userId` — DB auto-generates `invite_code` via default value
 2. Update `profiles.household_id` to new household id
 3. Invalidate all query keys
 
