@@ -10,7 +10,7 @@ declare global {
 process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
 
-// Mock localStorage for expo-sqlite/localStorage/install polyfill
+// Mock localStorage for web Platform path in supabase client
 if (typeof (global as any).localStorage === 'undefined') {
   const store: Record<string, string> = {};
   (global as any).localStorage = {

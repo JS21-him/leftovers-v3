@@ -1,8 +1,18 @@
 /**
  * @jest-environment node
  */
+/// <reference types="jest" />
 
-jest.mock('expo-sqlite/localStorage/install', () => {});
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(() => Promise.resolve(null)),
+  setItemAsync: jest.fn(() => Promise.resolve()),
+  deleteItemAsync: jest.fn(() => Promise.resolve()),
+}));
+
+jest.mock('react-native', () => ({
+  Platform: { OS: 'ios' },
+}));
+
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
     auth: {
@@ -16,9 +26,6 @@ jest.mock('@supabase/supabase-js', () => ({
     from: jest.fn(),
   })),
 }));
-
-process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
 
 import { supabase } from '../../../lib/supabase/client';
 
