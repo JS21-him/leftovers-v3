@@ -55,8 +55,9 @@ export async function deleteRecipe(id: string): Promise<void> {
 export async function suggestRecipes(): Promise<SuggestedRecipe[]> {
   const { data, error } = await supabase.functions.invoke('suggest-recipes');
 
-  if (error) throw new Error(error.message);
+  // data?.error has the real message from our function even on non-2xx responses
   if (data?.error) throw new Error(data.error);
+  if (error) throw new Error(error.message);
   return data.recipes as SuggestedRecipe[];
 }
 
