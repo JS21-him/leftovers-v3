@@ -1,7 +1,7 @@
 {
   "name": "leftovers-v3",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start --offline --clear",
     "android": "expo start --android",
