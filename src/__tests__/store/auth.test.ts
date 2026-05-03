@@ -7,6 +7,7 @@ import { useAuthStore } from '../../store/auth';
 describe('useAuthStore', () => {
   beforeEach(() => {
     useAuthStore.getState().setSession(null);
+    useAuthStore.getState().setHouseholdId(null);
     useAuthStore.getState().setLoading(true);
   });
 
@@ -41,5 +42,16 @@ describe('useAuthStore', () => {
   it('setLoading(false) updates isLoading', () => {
     useAuthStore.getState().setLoading(false);
     expect(useAuthStore.getState().isLoading).toBe(false);
+  });
+
+  it('setHouseholdId updates householdId', () => {
+    useAuthStore.getState().setHouseholdId('hh-123');
+    expect(useAuthStore.getState().householdId).toBe('hh-123');
+  });
+
+  it('setSession(null) clears householdId', () => {
+    useAuthStore.getState().setHouseholdId('hh-123');
+    useAuthStore.getState().setSession(null);
+    expect(useAuthStore.getState().householdId).toBeNull();
   });
 });
