@@ -142,7 +142,11 @@ export function useUpdateDietaryRestrictions(
       return updateDietaryRestrictions(householdId, restrictions);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['household', userId] });
+      if (userId) {
+        queryClient.invalidateQueries({ queryKey: ['household', userId] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['household'] });
+      }
     },
     onError: (err) => logger.error('updateDietaryRestrictions failed', err),
   });
