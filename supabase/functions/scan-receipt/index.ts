@@ -44,11 +44,28 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { image, householdId } = await req.json() as { image: string; householdId: string; userId: string };
+    let body: { image: string; householdId: string };
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { image, householdId } = body;
 
     if (!image || !householdId) {
       return new Response(JSON.stringify({ error: 'Missing image or householdId' }), {
         status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (image.length > 3_000_000) {
+      return new Response(JSON.stringify({ error: 'Image too large — use a smaller photo' }), {
+        status: 413,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

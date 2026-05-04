@@ -196,7 +196,7 @@ export default function FridgeScreen() {
         </View>
       ) : null}
 
-      {householdId && !householdError ? (
+      {householdId && !householdError && !scanning ? (
         <SpeedDialFAB
           onScanReceipt={() => handleScanSource('receipt')}
           onPhotoItems={() => handleScanSource('items')}
