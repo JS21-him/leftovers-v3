@@ -11,6 +11,7 @@ export interface Household {
   invite_code: string;
   created_by: string | null;
   created_at: string;
+  dietary_restrictions: string[];
 }
 
 export interface FridgeItem {
