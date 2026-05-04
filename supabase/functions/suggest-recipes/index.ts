@@ -83,7 +83,10 @@ Deno.serve(async (req: Request) => {
       .eq('id', profile.household_id)
       .single();
 
-    const restrictions: string[] = householdData?.dietary_restrictions ?? [];
+    const raw = householdData?.dietary_restrictions;
+    const restrictions: string[] = Array.isArray(raw)
+      ? raw.filter((r): r is string => typeof r === 'string' && r.length > 0)
+      : [];
     const dietaryLine = restrictions.length > 0
       ? `\n\nDietary restrictions for this household: ${restrictions.join(', ')}. Respect these in all suggestions.`
       : '';
