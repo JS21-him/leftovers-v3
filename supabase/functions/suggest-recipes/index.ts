@@ -77,7 +77,18 @@ Deno.serve(async (req: Request) => {
       .map((i: { name: string; quantity: string }) => `${i.name} (${i.quantity})`)
       .join(', ');
 
-    const prompt = `I have these items in my fridge: ${itemList}.
+    const { data: householdData } = await supabase
+      .from('households')
+      .select('dietary_restrictions')
+      .eq('id', profile.household_id)
+      .single();
+
+    const restrictions: string[] = householdData?.dietary_restrictions ?? [];
+    const dietaryLine = restrictions.length > 0
+      ? `\n\nDietary restrictions for this household: ${restrictions.join(', ')}. Respect these in all suggestions.`
+      : '';
+
+    const prompt = `I have these items in my fridge: ${itemList}.${dietaryLine}
 
 Suggest exactly 3 simple recipes I can make using some or all of these ingredients. Return ONLY a valid JSON array with no markdown, no explanation. Each object must have:
 - "title": string (recipe name)
