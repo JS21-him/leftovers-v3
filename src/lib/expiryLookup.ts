@@ -96,7 +96,10 @@ export function lookupExpiry(name: string): ExpiryEntry | null {
 }
 
 export function daysFromNow(days: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return date.toISOString().split('T')[0];
+  const d = new Date();
+  const local = new Date(d.getFullYear(), d.getMonth(), d.getDate() + days);
+  const yyyy = local.getFullYear();
+  const mm = String(local.getMonth() + 1).padStart(2, '0');
+  const dd = String(local.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }

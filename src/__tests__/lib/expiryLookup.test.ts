@@ -7,8 +7,11 @@ import { lookupExpiry, daysFromNow } from '../../lib/expiryLookup';
 
 function expectedDate(n: number): string {
   const d = new Date();
-  d.setDate(d.getDate() + n);
-  return d.toISOString().split('T')[0];
+  const local = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const yyyy = local.getFullYear();
+  const mm = String(local.getMonth() + 1).padStart(2, '0');
+  const dd = String(local.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 describe('lookupExpiry', () => {
