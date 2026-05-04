@@ -33,6 +33,7 @@ export interface Staple {
   default_quantity: string | null;
   reorder_when_low: boolean;
   created_at: string;
+  last_checked_at: string | null;
 }
 
 export interface ShoppingListItem {
