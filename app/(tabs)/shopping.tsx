@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList,
   ActivityIndicator, RefreshControl, Alert,
@@ -130,8 +130,7 @@ export default function ShoppingScreen() {
     marginTop: 16,
   };
 
-  function renderWeeklyHeader() {
-    return (
+  const renderWeeklyHeader = useCallback(() => (
       <View>
         {/* WEEKLY section */}
         <Text style={sectionLabel}>WEEKLY</Text>
@@ -164,8 +163,7 @@ export default function ShoppingScreen() {
         {/* THIS WEEK header */}
         <Text style={sectionLabel}>THIS WEEK</Text>
       </View>
-    );
-  }
+  ), [staples, toggleStapleMutation, deleteStapleMutation]);
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg, paddingTop: insets.top }}>
