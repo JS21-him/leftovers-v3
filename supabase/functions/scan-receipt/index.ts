@@ -120,30 +120,30 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    let parsed: { name: string; quantity: string; category: string }[] = [];
+    let rawArray: unknown[];
     try {
-      parsed = JSON.parse(jsonMatch[0]);
+      rawArray = JSON.parse(jsonMatch[0]);
     } catch {
       return new Response(JSON.stringify({ items: [] }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    if (!Array.isArray(parsed) || parsed.length === 0) {
+    if (!Array.isArray(rawArray) || rawArray.length === 0) {
       return new Response(JSON.stringify({ items: [] }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const rows = parsed
-      .filter((p) => p?.name)
+    const rows = (rawArray as { name?: unknown; quantity?: unknown; category?: unknown }[])
+      .filter((p) => p && typeof p.name === 'string' && p.name.trim().length > 0)
       .map((p) => ({
         household_id: householdId,
         added_by: user.id,
         name: String(p.name).trim(),
         quantity: String(p.quantity ?? '1').trim(),
-        category: p.category ?? 'other',
-        expiry_date: getExpiryDate(p.category ?? 'other'),
+        category: typeof p.category === 'string' ? p.category : 'other',
+        expiry_date: getExpiryDate(typeof p.category === 'string' ? p.category : 'other'),
       }));
 
     if (rows.length === 0) {

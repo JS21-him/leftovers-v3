@@ -89,4 +89,11 @@ describe('scanItems', () => {
       scanItems({ image: 'base64data', householdId: 'hh-1', userId: 'u-1' })
     ).rejects.toThrow('Network error');
   });
+
+  it('throws when data contains error field', async () => {
+    mockInvoke.mockResolvedValue({ data: { error: 'AI service not configured' }, error: null });
+    await expect(
+      scanItems({ image: 'base64data', householdId: 'hh-1', userId: 'u-1' })
+    ).rejects.toThrow('AI service not configured');
+  });
 });
