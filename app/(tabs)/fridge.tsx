@@ -26,12 +26,12 @@ export default function FridgeScreen() {
   const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || householdId) return;
     useHousehold(user.id).then(({ householdId: hid, error }) => {
       if (error) { setHouseholdError(error); return; }
       setHouseholdId(hid);
     });
-  }, [user]);
+  }, [user, householdId]);
 
   const { data: items, isLoading, isError, error, refetch, isRefetching } = useFridgeItems(householdId);
   const addMutation = useAddFridgeItem(householdId);
@@ -41,13 +41,17 @@ export default function FridgeScreen() {
 
   async function handleAdd(name: string, quantity: string, expiryDate: string | null) {
     if (!householdId || !user) return;
-    await addMutation.mutateAsync({
-      householdId,
-      addedBy: user.id,
-      name,
-      quantity,
-      expiryDate,
-    });
+    try {
+      await addMutation.mutateAsync({
+        householdId,
+        addedBy: user.id,
+        name,
+        quantity,
+        expiryDate,
+      });
+    } catch {
+      Alert.alert('Failed to add item', 'Something went wrong. Try again.');
+    }
   }
 
   function handleDelete(id: string) {

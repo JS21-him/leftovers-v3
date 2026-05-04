@@ -38,12 +38,12 @@ export default function ShoppingScreen() {
   const [showAddStapleModal, setShowAddStapleModal] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || householdId) return;
     useHousehold(user.id).then(({ householdId: hid, error }) => {
       if (error) { setHouseholdError(error); return; }
       setHouseholdId(hid);
     });
-  }, [user]);
+  }, [user, householdId]);
 
   const { data: items, isLoading, isError, error, refetch, isRefetching } = useShoppingItems(householdId);
   const addMutation = useAddShoppingItem(householdId);

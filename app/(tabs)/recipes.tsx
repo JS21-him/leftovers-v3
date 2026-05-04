@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList,
-  ActivityIndicator, RefreshControl,
+  ActivityIndicator, RefreshControl, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/auth';
@@ -28,12 +28,12 @@ export default function RecipesScreen() {
   const [showSuggestModal, setShowSuggestModal] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || householdId) return;
     useHousehold(user.id).then(({ householdId: hid, error }) => {
       if (error) { setHouseholdError(error); return; }
       setHouseholdId(hid);
     });
-  }, [user]);
+  }, [user, householdId]);
 
   const { data: recipes, isLoading, isError, error, refetch, isRefetching } = useSavedRecipes(householdId);
   const saveMutation = useSaveRecipe(householdId);
@@ -42,12 +42,16 @@ export default function RecipesScreen() {
 
   async function handleSave(recipe: SuggestedRecipe) {
     if (!householdId) return;
-    await saveMutation.mutateAsync({
-      householdId,
-      title: recipe.title,
-      ingredients: recipe.ingredients,
-      instructions: recipe.instructions,
-    });
+    try {
+      await saveMutation.mutateAsync({
+        householdId,
+        title: recipe.title,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+      });
+    } catch {
+      Alert.alert('Failed to save recipe', 'Something went wrong. Try again.');
+    }
   }
 
   function handleDelete(id: string) {
