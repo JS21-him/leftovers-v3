@@ -35,7 +35,8 @@ export async function joinHousehold(params: { inviteCode: string; userId: string
   const { data: targetId, error: rpcError } = await supabase.rpc('get_household_id_by_code', {
     code: params.inviteCode.trim(),
   });
-  if (rpcError || !targetId) throw new Error('Invite code not found');
+  if (rpcError) throw new Error(rpcError.message);
+  if (!targetId) throw new Error('Invite code not found');
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -88,7 +89,10 @@ export function useJoinHousehold(userId: string | null) {
   const queryClient = useQueryClient();
   const setHouseholdId = useAuthStore((s) => s.setHouseholdId);
   return useMutation({
-    mutationFn: (inviteCode: string) => joinHousehold({ inviteCode, userId: userId! }),
+    mutationFn: (inviteCode: string) => {
+      if (!userId) throw new Error('Not authenticated');
+      return joinHousehold({ inviteCode, userId });
+    },
     onSuccess: (newHouseholdId) => {
       setHouseholdId(newHouseholdId);
       queryClient.clear();
@@ -101,7 +105,10 @@ export function useLeaveHousehold(userId: string | null) {
   const queryClient = useQueryClient();
   const setHouseholdId = useAuthStore((s) => s.setHouseholdId);
   return useMutation({
-    mutationFn: () => leaveHousehold(userId!),
+    mutationFn: () => {
+      if (!userId) throw new Error('Not authenticated');
+      return leaveHousehold(userId);
+    },
     onSuccess: (newHouseholdId) => {
       setHouseholdId(newHouseholdId);
       queryClient.clear();
