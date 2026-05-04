@@ -13,11 +13,20 @@ import {
   useDeleteShoppingItem,
   useClearBoughtItems,
 } from '@/src/features/shopping/useShoppingItems';
+import {
+  useStaples,
+  useAddStaple,
+  useToggleStaple,
+  useDeleteStaple,
+  isCheckedThisWeek,
+} from '@/src/features/shopping/useStaples';
 import { ShoppingItemRow } from '@/src/features/shopping/ShoppingItemRow';
+import { StapleRow } from '@/src/features/shopping/StapleRow';
 import { AddShoppingItemModal } from '@/src/features/shopping/AddShoppingItemModal';
+import { AddStapleModal } from '@/src/features/shopping/AddStapleModal';
 import { COLORS } from '@/src/lib/constants';
 import { logger } from '@/src/lib/logger';
-import type { ShoppingListItem } from '@/src/types/database';
+import type { ShoppingListItem, Staple } from '@/src/types/database';
 
 export default function ShoppingScreen() {
   const insets = useSafeAreaInsets();
@@ -26,6 +35,7 @@ export default function ShoppingScreen() {
   const setHouseholdId = useAuthStore((s) => s.setHouseholdId);
   const [householdError, setHouseholdError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddStapleModal, setShowAddStapleModal] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -40,6 +50,11 @@ export default function ShoppingScreen() {
   const toggleMutation = useToggleShoppingItem(householdId);
   const deleteMutation = useDeleteShoppingItem(householdId);
   const clearMutation = useClearBoughtItems(householdId);
+
+  const { data: staples } = useStaples(householdId);
+  const addStapleMutation = useAddStaple(householdId);
+  const toggleStapleMutation = useToggleStaple(householdId);
+  const deleteStapleMutation = useDeleteStaple(householdId);
 
   const boughtCount = items?.filter((i) => i.is_bought).length ?? 0;
 
@@ -77,6 +92,24 @@ export default function ShoppingScreen() {
     );
   }
 
+  async function handleAddStaple(name: string, quantity: string) {
+    if (!householdId) return;
+    await addStapleMutation.mutateAsync({ name, quantity });
+  }
+
+  function handleToggleStaple(staple: Staple) {
+    toggleStapleMutation.mutate(
+      { id: staple.id, currentlyChecked: isCheckedThisWeek(staple.last_checked_at) },
+      { onError: () => Alert.alert('Failed to update', 'Try again.') }
+    );
+  }
+
+  function handleDeleteStaple(id: string) {
+    deleteStapleMutation.mutate(id, {
+      onError: () => Alert.alert('Failed to delete', 'Try again.'),
+    });
+  }
+
   function retryHousehold() {
     if (!user) return;
     setHouseholdError(null);
@@ -87,6 +120,52 @@ export default function ShoppingScreen() {
   }
 
   const isInitializing = !householdId && !householdError;
+
+  const sectionLabel = {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color: COLORS.muted,
+    letterSpacing: 1,
+    marginBottom: 4,
+    marginTop: 16,
+  };
+
+  function renderWeeklyHeader() {
+    return (
+      <View>
+        {/* WEEKLY section */}
+        <Text style={sectionLabel}>WEEKLY</Text>
+        <Text style={{ fontSize: 12, color: COLORS.muted, marginBottom: 12 }}>
+          Repeats every week.
+        </Text>
+
+        {staples && staples.length > 0 ? (
+          staples.map((staple) => (
+            <StapleRow
+              key={staple.id}
+              staple={staple}
+              onToggle={() => handleToggleStaple(staple)}
+              onDelete={() => handleDeleteStaple(staple.id)}
+            />
+          ))
+        ) : null}
+
+        <TouchableOpacity
+          onPress={() => setShowAddStapleModal(true)}
+          style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 4 }}
+        >
+          <Text style={{ fontSize: 20, color: COLORS.primary, marginRight: 8, lineHeight: 24 }}>+</Text>
+          <Text style={{ fontSize: 14, color: COLORS.primary, fontWeight: '600' }}>Add weekly item</Text>
+        </TouchableOpacity>
+
+        {/* Divider */}
+        <View style={{ height: 1, backgroundColor: COLORS.border, marginVertical: 16 }} />
+
+        {/* THIS WEEK header */}
+        <Text style={sectionLabel}>THIS WEEK</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg, paddingTop: insets.top }}>
@@ -145,11 +224,12 @@ export default function ShoppingScreen() {
               tintColor={COLORS.primary}
             />
           }
+          ListHeaderComponent={renderWeeklyHeader}
           ListEmptyComponent={
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 }}>
+            <View style={{ paddingTop: 40, alignItems: 'center' }}>
               <Text style={{ fontSize: 40, marginBottom: 16 }}>🛒</Text>
               <Text style={{ fontSize: 18, fontWeight: '600', color: COLORS.text, marginBottom: 8 }}>
-                Your list is empty
+                Your shopping list is empty
               </Text>
               <Text style={{ fontSize: 14, color: COLORS.muted, textAlign: 'center' }}>
                 Tap + to add your first item
@@ -195,6 +275,12 @@ export default function ShoppingScreen() {
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
         onAdd={handleAdd}
+      />
+
+      <AddStapleModal
+        visible={showAddStapleModal}
+        onClose={() => setShowAddStapleModal(false)}
+        onAdd={handleAddStaple}
       />
     </View>
   );
