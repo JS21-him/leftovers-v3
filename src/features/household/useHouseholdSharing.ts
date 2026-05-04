@@ -116,3 +116,34 @@ export function useLeaveHousehold(userId: string | null) {
     onError: (err) => logger.error('leaveHousehold failed', err),
   });
 }
+
+export async function updateDietaryRestrictions(
+  householdId: string,
+  restrictions: string[]
+): Promise<Household> {
+  const { data, error } = await supabase
+    .from('households')
+    .update({ dietary_restrictions: restrictions })
+    .eq('id', householdId)
+    .select()
+    .single();
+  if (error || !data) throw new Error(error?.message ?? 'Failed to update dietary preferences');
+  return data;
+}
+
+export function useUpdateDietaryRestrictions(
+  householdId: string | null,
+  userId: string | null
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (restrictions: string[]) => {
+      if (!householdId) throw new Error('No household');
+      return updateDietaryRestrictions(householdId, restrictions);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['household', userId] });
+    },
+    onError: (err) => logger.error('updateDietaryRestrictions failed', err),
+  });
+}

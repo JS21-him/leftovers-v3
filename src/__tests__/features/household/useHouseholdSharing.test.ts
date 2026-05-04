@@ -15,6 +15,7 @@ import {
   leaveHousehold,
   fetchHouseholdMembers,
   fetchHouseholdByUserId,
+  updateDietaryRestrictions,
 } from '../../../features/household/useHouseholdSharing';
 import { supabase } from '../../../lib/supabase/client';
 
@@ -165,5 +166,77 @@ describe('fetchHouseholdByUserId', () => {
     mockFrom.mockReturnValue(profileChain);
 
     await expect(fetchHouseholdByUserId('user-1')).rejects.toThrow('No household found');
+  });
+});
+
+describe('updateDietaryRestrictions', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('updates and returns household with new restrictions', async () => {
+    const updatedHousehold = {
+      id: 'hh-1',
+      name: 'My Kitchen',
+      invite_code: 'abc123',
+      created_by: 'u-1',
+      created_at: '',
+      dietary_restrictions: ['vegetarian', 'gluten-free'],
+    };
+    const chain = {
+      update: jest.fn(),
+      eq: jest.fn(),
+      select: jest.fn(),
+      single: jest.fn(),
+    };
+    chain.update.mockReturnValue(chain);
+    chain.eq.mockReturnValue(chain);
+    chain.select.mockReturnValue(chain);
+    chain.single.mockResolvedValue({ data: updatedHousehold, error: null });
+    mockFrom.mockReturnValue(chain);
+
+    const result = await updateDietaryRestrictions('hh-1', ['vegetarian', 'gluten-free']);
+    expect(result.dietary_restrictions).toEqual(['vegetarian', 'gluten-free']);
+    expect(chain.update).toHaveBeenCalledWith({ dietary_restrictions: ['vegetarian', 'gluten-free'] });
+    expect(chain.eq).toHaveBeenCalledWith('id', 'hh-1');
+  });
+
+  it('updates with empty array to clear all restrictions', async () => {
+    const updatedHousehold = {
+      id: 'hh-1',
+      name: 'My Kitchen',
+      invite_code: 'abc123',
+      created_by: 'u-1',
+      created_at: '',
+      dietary_restrictions: [],
+    };
+    const chain = {
+      update: jest.fn(),
+      eq: jest.fn(),
+      select: jest.fn(),
+      single: jest.fn(),
+    };
+    chain.update.mockReturnValue(chain);
+    chain.eq.mockReturnValue(chain);
+    chain.select.mockReturnValue(chain);
+    chain.single.mockResolvedValue({ data: updatedHousehold, error: null });
+    mockFrom.mockReturnValue(chain);
+
+    const result = await updateDietaryRestrictions('hh-1', []);
+    expect(result.dietary_restrictions).toEqual([]);
+  });
+
+  it('throws on DB error', async () => {
+    const chain = {
+      update: jest.fn(),
+      eq: jest.fn(),
+      select: jest.fn(),
+      single: jest.fn(),
+    };
+    chain.update.mockReturnValue(chain);
+    chain.eq.mockReturnValue(chain);
+    chain.select.mockReturnValue(chain);
+    chain.single.mockResolvedValue({ data: null, error: { message: 'Update failed' } });
+    mockFrom.mockReturnValue(chain);
+
+    await expect(updateDietaryRestrictions('hh-1', ['vegan'])).rejects.toThrow('Update failed');
   });
 });
