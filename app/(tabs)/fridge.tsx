@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, FlatList,
-  ActivityIndicator, RefreshControl,
+  ActivityIndicator, RefreshControl, Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/src/store/auth';
 import { useHousehold } from '@/src/features/fridge/useHousehold';
 import { useFridgeItems, useAddFridgeItem, useDeleteFridgeItem } from '@/src/features/fridge/useFridgeItems';
+import { useScanReceipt, useScanItems } from '@/src/features/fridge/useScanFridge';
 import { FridgeItemCard } from '@/src/features/fridge/FridgeItemCard';
 import { AddFridgeItemModal } from '@/src/features/fridge/AddFridgeItemModal';
+import { SpeedDialFAB } from '@/src/features/fridge/SpeedDialFAB';
 import { COLORS } from '@/src/lib/constants';
 import { logger } from '@/src/lib/logger';
 import type { FridgeItem } from '@/src/types/database';
@@ -20,6 +23,7 @@ export default function FridgeScreen() {
   const setHouseholdId = useAuthStore((s) => s.setHouseholdId);
   const [householdError, setHouseholdError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -32,6 +36,8 @@ export default function FridgeScreen() {
   const { data: items, isLoading, isError, error, refetch, isRefetching } = useFridgeItems(householdId);
   const addMutation = useAddFridgeItem(householdId);
   const deleteMutation = useDeleteFridgeItem(householdId);
+  const scanReceiptMutation = useScanReceipt(householdId);
+  const scanItemsMutation = useScanItems(householdId);
 
   async function handleAdd(name: string, quantity: string, expiryDate: string | null) {
     if (!householdId || !user) return;
@@ -57,6 +63,50 @@ export default function FridgeScreen() {
       if (error) setHouseholdError(error);
       else setHouseholdId(hid);
     });
+  }
+
+  async function doScan(type: 'receipt' | 'items', source: 'camera' | 'library') {
+    const result = source === 'camera'
+      ? await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.6,
+          base64: true,
+        })
+      : await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.6,
+          base64: true,
+        });
+
+    if (result.canceled || !result.assets?.[0]?.base64) return;
+
+    const base64 = result.assets[0].base64;
+    setScanning(true);
+    try {
+      const added = type === 'receipt'
+        ? await scanReceiptMutation.mutateAsync(base64)
+        : await scanItemsMutation.mutateAsync(base64);
+
+      if (added.length === 0) {
+        Alert.alert('No items found', 'Try a clearer photo.');
+      }
+    } catch {
+      Alert.alert('Scan failed', 'Something went wrong. Try again.');
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  function handleScanSource(type: 'receipt' | 'items') {
+    Alert.alert(
+      type === 'receipt' ? 'Scan Receipt' : 'Photo of Items',
+      'Choose a source',
+      [
+        { text: 'Take Photo', onPress: () => doScan(type, 'camera') },
+        { text: 'Choose from Library', onPress: () => doScan(type, 'library') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
   }
 
   const isInitializing = !householdId && !householdError;
@@ -110,7 +160,7 @@ export default function FridgeScreen() {
                 Your fridge is empty
               </Text>
               <Text style={{ fontSize: 14, color: COLORS.muted, textAlign: 'center' }}>
-                Tap + to add your first item
+                Tap + to add items — scan a receipt, take a photo, or add manually
               </Text>
             </View>
           }
@@ -120,28 +170,38 @@ export default function FridgeScreen() {
         />
       )}
 
-      {householdId && !householdError ? (
-        <TouchableOpacity
-          onPress={() => setShowAddModal(true)}
+      {scanning ? (
+        <View
           style={{
             position: 'absolute',
-            bottom: insets.bottom + 24,
-            right: 24,
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: COLORS.primary,
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
             justifyContent: 'center',
             alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            elevation: 5,
           }}
         >
-          <Text style={{ color: '#fff', fontSize: 28, lineHeight: 32 }}>+</Text>
-        </TouchableOpacity>
+          <View
+            style={{
+              backgroundColor: COLORS.surface,
+              borderRadius: 16,
+              padding: 24,
+              alignItems: 'center',
+            }}
+          >
+            <ActivityIndicator color={COLORS.primary} size="large" />
+            <Text style={{ color: COLORS.text, marginTop: 12, fontSize: 15, fontWeight: '600' }}>
+              Adding items…
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
+      {householdId && !householdError ? (
+        <SpeedDialFAB
+          onScanReceipt={() => handleScanSource('receipt')}
+          onPhotoItems={() => handleScanSource('items')}
+          onAddManually={() => setShowAddModal(true)}
+        />
       ) : null}
 
       <AddFridgeItemModal
