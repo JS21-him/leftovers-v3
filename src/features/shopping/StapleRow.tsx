@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { COLORS } from '@/src/lib/constants';
@@ -15,26 +15,24 @@ export function StapleRow({ staple, onToggle, onDelete }: Props) {
   const swipeRef = useRef<Swipeable>(null);
   const checked = isCheckedThisWeek(staple.last_checked_at);
 
-  function renderRightActions() {
-    return (
-      <TouchableOpacity
-        onPress={() => {
-          swipeRef.current?.close();
-          onDelete();
-        }}
-        style={{
-          backgroundColor: COLORS.danger,
-          justifyContent: 'center',
-          alignItems: 'center',
-          width: 80,
-          borderRadius: 12,
-          marginBottom: 8,
-        }}
-      >
-        <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Delete</Text>
-      </TouchableOpacity>
-    );
-  }
+  const renderRightActions = useCallback(() => (
+    <TouchableOpacity
+      onPress={() => {
+        swipeRef.current?.close();
+        onDelete();
+      }}
+      style={{
+        backgroundColor: COLORS.danger,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 80,
+        borderRadius: 12,
+        marginBottom: 8,
+      }}
+    >
+      <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Delete</Text>
+    </TouchableOpacity>
+  ), [onDelete]);
 
   return (
     <Swipeable ref={swipeRef} renderRightActions={renderRightActions} overshootRight={false}>
