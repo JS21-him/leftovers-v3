@@ -66,14 +66,26 @@ export default function FridgeScreen() {
   }
 
   async function doScan(type: 'receipt' | 'items', source: 'camera' | 'library') {
+    if (source === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Camera access required',
+          'Enable camera access in Settings to scan items.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
+
     const result = source === 'camera'
       ? await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: 'images',
           quality: 0.6,
           base64: true,
         })
       : await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: 'images',
           quality: 0.6,
           base64: true,
         });
