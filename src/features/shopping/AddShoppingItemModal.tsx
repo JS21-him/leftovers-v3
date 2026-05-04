@@ -23,7 +23,6 @@ export function AddShoppingItemModal({ visible, onClose, onAdd }: Props) {
     setName('');
     setQuantity('1');
     setError(null);
-    setIsLoading(false);
   }
 
   function handleClose() {
@@ -105,13 +104,13 @@ export function AddShoppingItemModal({ visible, onClose, onAdd }: Props) {
 
           <TouchableOpacity
             onPress={handleAdd}
-            disabled={isLoading}
+            disabled={isLoading || !name.trim()}
             style={{
               backgroundColor: COLORS.primary,
               borderRadius: 12,
               padding: 16,
               alignItems: 'center',
-              opacity: isLoading ? 0.7 : 1,
+              opacity: isLoading || !name.trim() ? 0.5 : 1,
               marginTop: 8,
             }}
           >

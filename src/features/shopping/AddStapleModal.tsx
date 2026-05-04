@@ -23,7 +23,6 @@ export function AddStapleModal({ visible, onClose, onAdd }: Props) {
     setName('');
     setQuantity('1');
     setError(null);
-    setIsLoading(false);
   }
 
   function handleClose() {
