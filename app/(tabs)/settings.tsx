@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ActivityIndicator,
-  Alert, Share, ScrollView,
+  Alert, Share, ScrollView, Switch,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,9 +12,20 @@ import {
   useHouseholdMembers,
   useJoinHousehold,
   useLeaveHousehold,
+  useUpdateDietaryRestrictions,
 } from '@/src/features/household/useHouseholdSharing';
 import { JoinHouseholdModal } from '@/src/features/household/JoinHouseholdModal';
 import { COLORS } from '@/src/lib/constants';
+
+const DIETARY_OPTIONS = [
+  { slug: 'vegetarian', label: 'Vegetarian' },
+  { slug: 'vegan', label: 'Vegan' },
+  { slug: 'gluten-free', label: 'Gluten-Free' },
+  { slug: 'dairy-free', label: 'Dairy-Free' },
+  { slug: 'nut-free', label: 'Nut-Free' },
+  { slug: 'kosher', label: 'Kosher' },
+  { slug: 'halal', label: 'Halal' },
+] as const;
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -24,11 +35,19 @@ export default function SettingsScreen() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [copiedFeedback, setCopiedFeedback] = useState(false);
+  const [localRestrictions, setLocalRestrictions] = useState<string[]>([]);
 
   const { data: household } = useHouseholdQuery(user?.id ?? null);
   const { data: members = [] } = useHouseholdMembers(householdId);
   const joinMutation = useJoinHousehold(user?.id ?? null);
   const leaveMutation = useLeaveHousehold(user?.id ?? null);
+  const updateDietaryMutation = useUpdateDietaryRestrictions(householdId, user?.id ?? null);
+
+  useEffect(() => {
+    if (household) {
+      setLocalRestrictions(household.dietary_restrictions ?? []);
+    }
+  }, [household?.id]);
 
   async function handleSignOut() {
     setIsSigningOut(true);
@@ -66,6 +85,20 @@ export default function SettingsScreen() {
 
   async function handleJoin(code: string) {
     await joinMutation.mutateAsync(code);
+  }
+
+  async function handleDietaryToggle(slug: string, value: boolean) {
+    const prev = localRestrictions;
+    const next = value
+      ? [...localRestrictions, slug]
+      : localRestrictions.filter((r) => r !== slug);
+    setLocalRestrictions(next);
+    try {
+      await updateDietaryMutation.mutateAsync(next);
+    } catch {
+      setLocalRestrictions(prev);
+      Alert.alert('Failed to save', 'Could not update dietary preferences. Try again.');
+    }
   }
 
   const sectionLabel = {
@@ -202,6 +235,49 @@ export default function SettingsScreen() {
         <Text style={{ fontSize: 15, color: COLORS.text }}>Join a Household</Text>
         <Text style={{ fontSize: 18, color: COLORS.primary }}>›</Text>
       </TouchableOpacity>
+
+      {/* ── Dietary Preferences Section ───────────── */}
+      <Text style={sectionLabel}>DIETARY PREFERENCES</Text>
+
+      <Text style={{ fontSize: 13, color: COLORS.muted, marginBottom: 12 }}>
+        Used by AI for recipe suggestions and shopping recommendations.
+      </Text>
+
+      <View style={{
+        backgroundColor: COLORS.surface,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        overflow: 'hidden',
+        marginBottom: 8,
+      }}>
+        {DIETARY_OPTIONS.map((option, index) => (
+          <View
+            key={option.slug}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: 16,
+              borderBottomWidth: index < DIETARY_OPTIONS.length - 1 ? 1 : 0,
+              borderBottomColor: COLORS.border,
+            }}
+          >
+            <Text style={{ fontSize: 15, color: COLORS.text }}>{option.label}</Text>
+            <Switch
+              value={localRestrictions.includes(option.slug)}
+              onValueChange={(value) => handleDietaryToggle(option.slug, value)}
+              disabled={updateDietaryMutation.isPending || !household}
+              trackColor={{ false: COLORS.border, true: COLORS.primary }}
+              thumbColor="#fff"
+            />
+          </View>
+        ))}
+      </View>
+
+      <Text style={{ fontSize: 12, color: COLORS.muted, textAlign: 'center', marginBottom: 4 }}>
+        Changes save automatically.
+      </Text>
 
       {/* ── Auth Section ──────────────────────────── */}
       <Text style={sectionLabel}>ACCOUNT</Text>
