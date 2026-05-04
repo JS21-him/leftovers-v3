@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View, Text, TouchableOpacity, ActivityIndicator,
   Alert, Share, ScrollView, Switch,
@@ -35,19 +35,12 @@ export default function SettingsScreen() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [copiedFeedback, setCopiedFeedback] = useState(false);
-  const [localRestrictions, setLocalRestrictions] = useState<string[]>([]);
 
   const { data: household } = useHouseholdQuery(user?.id ?? null);
   const { data: members = [] } = useHouseholdMembers(householdId);
   const joinMutation = useJoinHousehold(user?.id ?? null);
   const leaveMutation = useLeaveHousehold(user?.id ?? null);
   const updateDietaryMutation = useUpdateDietaryRestrictions(householdId, user?.id ?? null);
-
-  useEffect(() => {
-    if (household) {
-      setLocalRestrictions(household.dietary_restrictions ?? []);
-    }
-  }, [household?.id]);
 
   async function handleSignOut() {
     setIsSigningOut(true);
@@ -87,18 +80,14 @@ export default function SettingsScreen() {
     await joinMutation.mutateAsync(code);
   }
 
-  async function handleDietaryToggle(slug: string, value: boolean) {
-    const prev = localRestrictions;
+  function handleDietaryToggle(slug: string, value: boolean) {
+    const current = household?.dietary_restrictions ?? [];
     const next = value
-      ? [...localRestrictions, slug]
-      : localRestrictions.filter((r) => r !== slug);
-    setLocalRestrictions(next);
-    try {
-      await updateDietaryMutation.mutateAsync(next);
-    } catch {
-      setLocalRestrictions(prev);
-      Alert.alert('Failed to save', 'Could not update dietary preferences. Try again.');
-    }
+      ? [...current, slug]
+      : current.filter((r) => r !== slug);
+    updateDietaryMutation.mutate(next, {
+      onError: () => Alert.alert('Failed to save', 'Could not update dietary preferences. Try again.'),
+    });
   }
 
   const sectionLabel = {
@@ -265,7 +254,7 @@ export default function SettingsScreen() {
           >
             <Text style={{ fontSize: 15, color: COLORS.text }}>{option.label}</Text>
             <Switch
-              value={localRestrictions.includes(option.slug)}
+              value={(household?.dietary_restrictions ?? []).includes(option.slug)}
               onValueChange={(value) => handleDietaryToggle(option.slug, value)}
               disabled={updateDietaryMutation.isPending || !household}
               trackColor={{ false: COLORS.border, true: COLORS.primary }}

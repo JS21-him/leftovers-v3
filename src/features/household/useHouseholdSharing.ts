@@ -141,13 +141,28 @@ export function useUpdateDietaryRestrictions(
       if (!householdId) throw new Error('No household');
       return updateDietaryRestrictions(householdId, restrictions);
     },
-    onSuccess: () => {
+    onMutate: async (restrictions: string[]) => {
+      if (!userId) return;
+      await queryClient.cancelQueries({ queryKey: ['household', userId] });
+      const previous = queryClient.getQueryData<Household>(['household', userId]);
+      if (previous) {
+        queryClient.setQueryData(['household', userId], {
+          ...previous,
+          dietary_restrictions: restrictions,
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _restrictions, context) => {
+      if (context?.previous && userId) {
+        queryClient.setQueryData(['household', userId], context.previous);
+      }
+      logger.error('updateDietaryRestrictions failed', _err);
+    },
+    onSettled: () => {
       if (userId) {
         queryClient.invalidateQueries({ queryKey: ['household', userId] });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['household'] });
       }
     },
-    onError: (err) => logger.error('updateDietaryRestrictions failed', err),
   });
 }
