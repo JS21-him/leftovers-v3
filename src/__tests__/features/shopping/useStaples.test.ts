@@ -105,9 +105,11 @@ describe('toggleStaple', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('sets last_checked_at = null when currentlyChecked is true', async () => {
-    const chain = { update: jest.fn(), eq: jest.fn() };
+    const chain = { update: jest.fn(), eq: jest.fn(), select: jest.fn(), single: jest.fn() };
     chain.update.mockReturnValue(chain);
-    chain.eq.mockResolvedValue({ error: null });
+    chain.eq.mockReturnValue(chain);
+    chain.select.mockReturnValue(chain);
+    chain.single.mockResolvedValue({ data: { id: 's-1' }, error: null });
     mockFrom.mockReturnValue(chain);
 
     await toggleStaple({ id: 's-1', currentlyChecked: true });
@@ -116,9 +118,11 @@ describe('toggleStaple', () => {
   });
 
   it('sets last_checked_at to an ISO string when currentlyChecked is false', async () => {
-    const chain = { update: jest.fn(), eq: jest.fn() };
+    const chain = { update: jest.fn(), eq: jest.fn(), select: jest.fn(), single: jest.fn() };
     chain.update.mockReturnValue(chain);
-    chain.eq.mockResolvedValue({ error: null });
+    chain.eq.mockReturnValue(chain);
+    chain.select.mockReturnValue(chain);
+    chain.single.mockResolvedValue({ data: { id: 's-1' }, error: null });
     mockFrom.mockReturnValue(chain);
 
     await toggleStaple({ id: 's-1', currentlyChecked: false });
@@ -128,9 +132,11 @@ describe('toggleStaple', () => {
   });
 
   it('throws on DB error', async () => {
-    const chain = { update: jest.fn(), eq: jest.fn() };
+    const chain = { update: jest.fn(), eq: jest.fn(), select: jest.fn(), single: jest.fn() };
     chain.update.mockReturnValue(chain);
-    chain.eq.mockResolvedValue({ error: { message: 'Update failed' } });
+    chain.eq.mockReturnValue(chain);
+    chain.select.mockReturnValue(chain);
+    chain.single.mockResolvedValue({ data: null, error: { message: 'Update failed' } });
     mockFrom.mockReturnValue(chain);
 
     await expect(toggleStaple({ id: 's-1', currentlyChecked: false })).rejects.toThrow('Update failed');
@@ -141,9 +147,11 @@ describe('deleteStaple', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('deletes by id', async () => {
-    const chain = { delete: jest.fn(), eq: jest.fn() };
+    const chain = { delete: jest.fn(), eq: jest.fn(), select: jest.fn(), single: jest.fn() };
     chain.delete.mockReturnValue(chain);
-    chain.eq.mockResolvedValue({ error: null });
+    chain.eq.mockReturnValue(chain);
+    chain.select.mockReturnValue(chain);
+    chain.single.mockResolvedValue({ data: { id: 's-1' }, error: null });
     mockFrom.mockReturnValue(chain);
 
     await deleteStaple('s-1');
@@ -152,9 +160,11 @@ describe('deleteStaple', () => {
   });
 
   it('throws on DB error', async () => {
-    const chain = { delete: jest.fn(), eq: jest.fn() };
+    const chain = { delete: jest.fn(), eq: jest.fn(), select: jest.fn(), single: jest.fn() };
     chain.delete.mockReturnValue(chain);
-    chain.eq.mockResolvedValue({ error: { message: 'Delete failed' } });
+    chain.eq.mockReturnValue(chain);
+    chain.select.mockReturnValue(chain);
+    chain.single.mockResolvedValue({ data: null, error: { message: 'Delete failed' } });
     mockFrom.mockReturnValue(chain);
 
     await expect(deleteStaple('s-1')).rejects.toThrow('Delete failed');

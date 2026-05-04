@@ -41,19 +41,23 @@ export async function addStaple(params: AddStapleParams): Promise<Staple> {
 }
 
 export async function toggleStaple(params: { id: string; currentlyChecked: boolean }): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('staples')
     .update({ last_checked_at: params.currentlyChecked ? null : new Date().toISOString() })
-    .eq('id', params.id);
-  if (error) throw new Error(error.message);
+    .eq('id', params.id)
+    .select()
+    .single();
+  if (error || !data) throw new Error(error?.message ?? 'Staple not found');
 }
 
 export async function deleteStaple(id: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('staples')
     .delete()
-    .eq('id', id);
-  if (error) throw new Error(error.message);
+    .eq('id', id)
+    .select()
+    .single();
+  if (error || !data) throw new Error(error?.message ?? 'Staple not found');
 }
 
 export function useStaples(householdId: string | null) {
