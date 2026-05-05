@@ -12,7 +12,7 @@ jest.mock('../../../lib/supabase/client', () => ({
 import { fetchExpiryPrediction } from '../../../features/fridge/useExpiryPrediction';
 import { supabase } from '../../../lib/supabase/client';
 
-const mockInvoke = (supabase.functions as { invoke: jest.Mock }).invoke;
+const mockInvoke = (supabase.functions as unknown as { invoke: jest.Mock }).invoke;
 
 describe('fetchExpiryPrediction', () => {
   beforeEach(() => jest.clearAllMocks());

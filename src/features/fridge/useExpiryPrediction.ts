@@ -30,43 +30,58 @@ export function useExpiryPrediction(name: string): ExpiryPrediction {
     source: null,
   });
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelRef = useRef(false);
 
   useEffect(() => {
+    cancelRef.current = false;
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     const trimmed = name.trim();
     if (!trimmed) {
       setState({ expiryDate: null, explanation: null, isLoading: false, source: null });
-      return;
+      return () => {
+        cancelRef.current = true;
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+      };
     }
 
     debounceRef.current = setTimeout(async () => {
       const lookup = lookupExpiry(trimmed);
       if (lookup) {
-        setState({
-          expiryDate: daysFromNow(lookup.days),
-          explanation: lookup.explanation,
-          isLoading: false,
-          source: 'lookup',
-        });
+        if (!cancelRef.current) {
+          setState({
+            expiryDate: daysFromNow(lookup.days),
+            explanation: lookup.explanation,
+            isLoading: false,
+            source: 'lookup',
+          });
+        }
         return;
       }
 
-      setState({ expiryDate: null, explanation: null, isLoading: true, source: null });
+      if (!cancelRef.current) {
+        setState({ expiryDate: null, explanation: null, isLoading: true, source: null });
+      }
       try {
         const result = await fetchExpiryPrediction(trimmed);
-        setState({
-          expiryDate: result.expiryDate,
-          explanation: result.explanation,
-          isLoading: false,
-          source: 'ai',
-        });
-      } catch {
-        setState({ expiryDate: null, explanation: null, isLoading: false, source: null });
+        if (!cancelRef.current) {
+          setState({
+            expiryDate: result.expiryDate,
+            explanation: result.explanation,
+            isLoading: false,
+            source: 'ai',
+          });
+        }
+      } catch (err) {
+        if (!cancelRef.current) {
+          setState({ expiryDate: null, explanation: null, isLoading: false, source: null });
+        }
+        console.error('useExpiryPrediction: AI fallback failed', err);
       }
     }, 500);
 
     return () => {
+      cancelRef.current = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [name]);
