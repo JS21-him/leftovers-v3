@@ -29,29 +29,39 @@ export function useShoppingSuggestions(householdId: string | null): ShoppingSugg
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasGeneratedRef = useRef(false);
+  const lastHouseholdIdRef = useRef<string | null>(null);
+  const cancelRef = useRef(false);
 
   const generate = useCallback(async () => {
     if (!householdId) return;
+    cancelRef.current = false;
     setIsLoading(true);
     setError(null);
     setSuggestions(null);
     try {
       const result = await fetchShoppingSuggestions();
-      setSuggestions(result);
+      if (!cancelRef.current) setSuggestions(result);
     } catch {
-      setError("Couldn't load suggestions. Tap to retry.");
+      if (!cancelRef.current) setError("Couldn't load suggestions. Tap to retry.");
     } finally {
-      setIsLoading(false);
+      if (!cancelRef.current) setIsLoading(false);
       hasGeneratedRef.current = true;
     }
   }, [householdId]);
 
   useEffect(() => {
-    if (!householdId || hasGeneratedRef.current) return;
+    if (!householdId) return;
+    if (householdId !== lastHouseholdIdRef.current) {
+      hasGeneratedRef.current = false;
+      lastHouseholdIdRef.current = householdId;
+    }
+    if (hasGeneratedRef.current) return;
     generate();
+    return () => { cancelRef.current = true; };
   }, [householdId, generate]);
 
   const refresh = useCallback(() => {
+    cancelRef.current = true;
     hasGeneratedRef.current = false;
     generate();
   }, [generate]);
