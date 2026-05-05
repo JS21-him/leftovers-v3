@@ -162,7 +162,16 @@ Rules:
       });
     }
 
-    return new Response(JSON.stringify({ suggestions: result.suggestions }), {
+    const existingNames = new Set([
+      ...shoppingItems.map((i) => i.name.toLowerCase()),
+      ...staples.map((s) => s.name.toLowerCase()),
+    ]);
+
+    const filtered = result.suggestions.filter(
+      (s) => !existingNames.has(s.name.toLowerCase())
+    );
+
+    return new Response(JSON.stringify({ suggestions: filtered }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
