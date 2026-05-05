@@ -24,7 +24,10 @@ export function ShoppingSuggestionsCard({
 
   if (!isLoading && !error && (!suggestions || suggestions.length === 0)) return null;
 
-  const unaddedSuggestions = (suggestions ?? []).filter((s) => !addedNames.has(s.name));
+  const uniqueSuggestions = Array.from(
+    new Map((suggestions ?? []).map((s) => [s.name, s])).values()
+  );
+  const unaddedSuggestions = uniqueSuggestions.filter((s) => !addedNames.has(s.name));
 
   function handleAdd(name: string) {
     onAdd(name);
@@ -34,7 +37,7 @@ export function ShoppingSuggestionsCard({
   function handleAddAll() {
     const names = unaddedSuggestions.map((s) => s.name);
     onAddAll(names);
-    setAddedNames(new Set((suggestions ?? []).map((s) => s.name)));
+    setAddedNames(new Set(uniqueSuggestions.map((s) => s.name)));
   }
 
   return (
@@ -63,7 +66,7 @@ export function ShoppingSuggestionsCard({
               ? '✦ Finding suggestions…'
               : error
                 ? '✦ Suggestions unavailable'
-                : `✦ ${suggestions!.length} items to consider`}
+                : `✦ ${suggestions?.length ?? 0} items to consider`}
           </Text>
           {!isLoading && !error && (
             <Text style={{ fontSize: 11, color: COLORS.muted, marginTop: 2 }}>
@@ -72,11 +75,11 @@ export function ShoppingSuggestionsCard({
           )}
         </View>
         <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-          <TouchableOpacity onPress={onRefresh}>
+          <TouchableOpacity onPress={onRefresh} accessibilityRole="button" accessibilityLabel="Refresh suggestions">
             <Text style={{ fontSize: 12, color: COLORS.muted }}>↻ Refresh</Text>
           </TouchableOpacity>
           {!isLoading && !error && unaddedSuggestions.length > 0 && (
-            <TouchableOpacity onPress={handleAddAll}>
+            <TouchableOpacity onPress={handleAddAll} accessibilityRole="button" accessibilityLabel="Add all suggestions">
               <Text style={{ fontSize: 12, color: COLORS.primary, fontWeight: '600' }}>Add all</Text>
             </TouchableOpacity>
           )}
@@ -93,14 +96,13 @@ export function ShoppingSuggestionsCard({
 
       {/* Error state */}
       {error && (
-        <TouchableOpacity onPress={onRefresh}>
-          <Text style={{ fontSize: 13, color: COLORS.muted }}>{error}</Text>
+        <TouchableOpacity onPress={onRefresh} accessibilityRole="button" accessibilityLabel="Retry loading suggestions">
+          <Text style={{ fontSize: 13, color: COLORS.muted }}>Couldn't load suggestions. Tap to retry.</Text>
         </TouchableOpacity>
       )}
 
       {/* Suggestion rows */}
-      {suggestions &&
-        suggestions.map((suggestion) => {
+      {uniqueSuggestions.map((suggestion) => {
           const isAdded = addedNames.has(suggestion.name);
           return (
             <View
@@ -123,6 +125,8 @@ export function ShoppingSuggestionsCard({
               <TouchableOpacity
                 onPress={() => { if (!isAdded) handleAdd(suggestion.name); }}
                 disabled={isAdded}
+                accessibilityRole="button"
+                accessibilityLabel={isAdded ? `${suggestion.name} added` : `Add ${suggestion.name}`}
                 style={{
                   backgroundColor: isAdded ? COLORS.success : COLORS.primary,
                   borderRadius: 6,
