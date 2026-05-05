@@ -64,6 +64,13 @@ Deno.serve(async (req: Request) => {
         .eq('household_id', householdId),
     ]);
 
+    if (fridgeResult.error || shoppingResult.error || staplesResult.error) {
+      return new Response(JSON.stringify({ error: 'Failed to load household data' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const fridgeItems = (fridgeResult.data ?? []) as { name: string; expiry_date: string | null }[];
     const shoppingItems = (shoppingResult.data ?? []) as { name: string }[];
     const staples = (staplesResult.data ?? []) as { name: string }[];
@@ -167,9 +174,11 @@ Rules:
       ...staples.map((s) => s.name.toLowerCase()),
     ]);
 
-    const filtered = result.suggestions.filter(
-      (s) => !existingNames.has(s.name.toLowerCase())
-    );
+    const filtered = result.suggestions
+      .filter((s): s is { name: string; reason: string } =>
+        typeof s.name === 'string' && typeof s.reason === 'string'
+      )
+      .filter((s) => !existingNames.has(s.name.toLowerCase()));
 
     return new Response(JSON.stringify({ suggestions: filtered }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
