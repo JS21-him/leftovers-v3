@@ -120,18 +120,20 @@ export function AddFridgeItemModal({ visible, onClose, onAdd }: Props) {
           <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.muted, marginBottom: 6 }}>EXPIRY DATE</Text>
 
           {isPredicting ? (
-            <View style={{
-              backgroundColor: COLORS.bg,
-              borderWidth: 1,
-              borderColor: COLORS.border,
-              borderStyle: 'dashed',
-              borderRadius: 12,
-              padding: 14,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 10,
-              marginBottom: 12,
-            }}>
+            <View
+              accessibilityLiveRegion="polite"
+              style={{
+                backgroundColor: COLORS.bg,
+                borderWidth: 1,
+                borderColor: COLORS.border,
+                borderStyle: 'dashed',
+                borderRadius: 12,
+                padding: 14,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                marginBottom: 12,
+              }}>
               <ActivityIndicator size="small" color={COLORS.primary} />
               <Text style={{ fontSize: 14, color: COLORS.muted }}>Looking up expiry…</Text>
             </View>
@@ -139,6 +141,8 @@ export function AddFridgeItemModal({ visible, onClose, onAdd }: Props) {
             <>
               <TouchableOpacity
                 onPress={() => setManualExpiry(prediction.expiryDate ?? '')}
+                accessibilityRole="button"
+                accessibilityLabel={`Expiry date ${prediction.expiryDate ?? ''}, suggested by AI. Tap to edit.`}
                 style={{
                   backgroundColor: COLORS.bg,
                   borderWidth: 1.5,

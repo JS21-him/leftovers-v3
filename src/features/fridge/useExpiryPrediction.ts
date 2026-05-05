@@ -45,6 +45,7 @@ export function useExpiryPrediction(name: string): ExpiryPrediction {
       };
     }
 
+    setState({ expiryDate: null, explanation: null, isLoading: false, source: null });
     debounceRef.current = setTimeout(async () => {
       const lookup = lookupExpiry(trimmed);
       if (lookup) {
