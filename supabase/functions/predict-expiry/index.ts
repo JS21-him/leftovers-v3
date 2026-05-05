@@ -59,7 +59,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const name = body.name.trim();
-    const prompt = `How long does "${name}" keep in a typical home refrigerator? Return ONLY valid JSON with no markdown: {"days": <integer>, "explanation": "<one sentence, e.g. Raw chicken keeps 1-2 days in the fridge.>"}`;
+    const prompt = `How long does "${name}" keep in a typical home refrigerator? Return ONLY valid JSON with no markdown, no explanation, no code block. Example: {"days": 3, "explanation": "Raw chicken keeps 1-2 days in the fridge."}`;
 
     const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -75,6 +75,8 @@ Deno.serve(async (req: Request) => {
       }),
     });
 
+    const responseText = await aiResponse.text();
+
     if (!aiResponse.ok) {
       return new Response(JSON.stringify({ error: `AI API error: ${aiResponse.status}` }), {
         status: 500,
@@ -84,7 +86,7 @@ Deno.serve(async (req: Request) => {
 
     let aiData: { content?: { text: string }[] };
     try {
-      aiData = await aiResponse.json();
+      aiData = JSON.parse(responseText);
     } catch {
       return new Response(JSON.stringify({ error: 'Failed to parse AI response' }), {
         status: 500,
@@ -101,10 +103,16 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const prediction: { days: number; explanation: string } = JSON.parse(jsonMatch[0]);
+    const prediction = JSON.parse(jsonMatch[0]) as { days: unknown; explanation: unknown };
+    if (typeof prediction.days !== 'number' || typeof prediction.explanation !== 'string') {
+      return new Response(JSON.stringify({ error: 'Unexpected AI response shape' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + Math.max(1, Math.round(prediction.days)));
+    expiryDate.setDate(expiryDate.getDate() + Math.max(1, Math.round(prediction.days as number)));
 
     return new Response(JSON.stringify({
       expiryDate: expiryDate.toISOString().split('T')[0],
