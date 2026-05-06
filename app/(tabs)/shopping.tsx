@@ -200,7 +200,7 @@ export default function ShoppingScreen() {
         {/* THIS WEEK header */}
         <Text style={sectionLabel}>THIS WEEK</Text>
       </View>
-  ), [staples, toggleStapleMutation, deleteStapleMutation, suggestions, suggestionsLoading, suggestionsError, refreshSuggestions, handleAddSuggestion, handleAddAllSuggestions]);
+  ), [staples, suggestions, suggestionsLoading, suggestionsError, refreshSuggestions, handleAddSuggestion, handleAddAllSuggestions]);
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg, paddingTop: insets.top }}>

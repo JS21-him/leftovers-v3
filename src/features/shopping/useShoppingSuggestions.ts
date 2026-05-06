@@ -44,8 +44,10 @@ export function useShoppingSuggestions(householdId: string | null): ShoppingSugg
     } catch {
       if (!cancelRef.current) setError("Couldn't load suggestions. Tap to retry.");
     } finally {
-      if (!cancelRef.current) setIsLoading(false);
-      hasGeneratedRef.current = true;
+      if (!cancelRef.current) {
+        setIsLoading(false);
+        hasGeneratedRef.current = true;
+      }
     }
   }, [householdId]);
 
