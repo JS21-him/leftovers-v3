@@ -119,16 +119,16 @@ export default function ShoppingScreen() {
     });
   }
 
-  async function handleAddSuggestion(name: string) {
+  const handleAddSuggestion = useCallback(async (name: string) => {
     if (!householdId || !user) return;
     try {
       await addMutation.mutateAsync({ householdId, addedBy: user.id, name, quantity: '1' });
     } catch {
       Alert.alert('Failed to add item', 'Something went wrong. Try again.');
     }
-  }
+  }, [householdId, user, addMutation]);
 
-  async function handleAddAllSuggestions(names: string[]) {
+  const handleAddAllSuggestions = useCallback(async (names: string[]) => {
     if (!householdId || !user) return;
     for (const name of names) {
       try {
@@ -137,7 +137,7 @@ export default function ShoppingScreen() {
         // card tracks optimistic added state — skip individual failures silently
       }
     }
-  }
+  }, [householdId, user, addMutation]);
 
   function retryHousehold() {
     if (!user) return;
@@ -200,7 +200,7 @@ export default function ShoppingScreen() {
         {/* THIS WEEK header */}
         <Text style={sectionLabel}>THIS WEEK</Text>
       </View>
-  ), [staples, toggleStapleMutation, deleteStapleMutation, suggestions, suggestionsLoading, suggestionsError, refreshSuggestions]);
+  ), [staples, toggleStapleMutation, deleteStapleMutation, suggestions, suggestionsLoading, suggestionsError, refreshSuggestions, handleAddSuggestion, handleAddAllSuggestions]);
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg, paddingTop: insets.top }}>
