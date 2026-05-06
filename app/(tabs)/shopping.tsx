@@ -27,6 +27,8 @@ import { AddStapleModal } from '@/src/features/shopping/AddStapleModal';
 import { COLORS } from '@/src/lib/constants';
 import { logger } from '@/src/lib/logger';
 import type { ShoppingListItem, Staple } from '@/src/types/database';
+import { useShoppingSuggestions } from '@/src/features/shopping/useShoppingSuggestions';
+import { ShoppingSuggestionsCard } from '@/src/features/shopping/ShoppingSuggestionsCard';
 
 export default function ShoppingScreen() {
   const insets = useSafeAreaInsets();
@@ -55,6 +57,13 @@ export default function ShoppingScreen() {
   const addStapleMutation = useAddStaple(householdId);
   const toggleStapleMutation = useToggleStaple(householdId);
   const deleteStapleMutation = useDeleteStaple(householdId);
+
+  const {
+    suggestions,
+    isLoading: suggestionsLoading,
+    error: suggestionsError,
+    refresh: refreshSuggestions,
+  } = useShoppingSuggestions(householdId);
 
   const boughtCount = items?.filter((i) => i.is_bought).length ?? 0;
 
@@ -110,6 +119,26 @@ export default function ShoppingScreen() {
     });
   }
 
+  async function handleAddSuggestion(name: string) {
+    if (!householdId || !user) return;
+    try {
+      await addMutation.mutateAsync({ householdId, addedBy: user.id, name, quantity: '1' });
+    } catch {
+      Alert.alert('Failed to add item', 'Something went wrong. Try again.');
+    }
+  }
+
+  async function handleAddAllSuggestions(names: string[]) {
+    if (!householdId || !user) return;
+    for (const name of names) {
+      try {
+        await addMutation.mutateAsync({ householdId, addedBy: user.id, name, quantity: '1' });
+      } catch {
+        // card tracks optimistic added state — skip individual failures silently
+      }
+    }
+  }
+
   function retryHousehold() {
     if (!user) return;
     setHouseholdError(null);
@@ -132,6 +161,14 @@ export default function ShoppingScreen() {
 
   const renderWeeklyHeader = useCallback(() => (
       <View>
+        <ShoppingSuggestionsCard
+          suggestions={suggestions}
+          isLoading={suggestionsLoading}
+          error={suggestionsError}
+          onAdd={handleAddSuggestion}
+          onAddAll={handleAddAllSuggestions}
+          onRefresh={refreshSuggestions}
+        />
         {/* WEEKLY section */}
         <Text style={sectionLabel}>WEEKLY</Text>
         <Text style={{ fontSize: 12, color: COLORS.muted, marginBottom: 12 }}>
@@ -163,7 +200,7 @@ export default function ShoppingScreen() {
         {/* THIS WEEK header */}
         <Text style={sectionLabel}>THIS WEEK</Text>
       </View>
-  ), [staples, toggleStapleMutation, deleteStapleMutation]);
+  ), [staples, toggleStapleMutation, deleteStapleMutation, suggestions, suggestionsLoading, suggestionsError, refreshSuggestions]);
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg, paddingTop: insets.top }}>
