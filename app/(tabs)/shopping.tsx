@@ -29,6 +29,7 @@ import { logger } from '@/src/lib/logger';
 import type { ShoppingListItem, Staple } from '@/src/types/database';
 import { useShoppingSuggestions } from '@/src/features/shopping/useShoppingSuggestions';
 import { ShoppingSuggestionsCard } from '@/src/features/shopping/ShoppingSuggestionsCard';
+import { useInstacartOrder } from '@/src/features/shopping/useInstacartOrder';
 
 export default function ShoppingScreen() {
   const insets = useSafeAreaInsets();
@@ -64,6 +65,19 @@ export default function ShoppingScreen() {
     error: suggestionsError,
     refresh: refreshSuggestions,
   } = useShoppingSuggestions(householdId);
+
+  const { orderViaInstacart, isLoading: isOrdering, error: instacartError } = useInstacartOrder();
+  const [instacartUnavailable, setInstacartUnavailable] = useState(false);
+
+  useEffect(() => {
+    if (instacartError === 'not_configured') {
+      setInstacartUnavailable(true);
+    } else if (instacartError === 'empty_list') {
+      Alert.alert('Nothing to order', 'Add items to your shopping list first.');
+    } else if (instacartError === 'instacart_error') {
+      Alert.alert('Order failed', "Couldn't reach Instacart. Try again.");
+    }
+  }, [instacartError]);
 
   const boughtCount = items?.filter((i) => i.is_bought).length ?? 0;
 
@@ -214,13 +228,22 @@ export default function ShoppingScreen() {
         alignItems: 'center',
       }}>
         <Text style={{ fontSize: 28, fontWeight: '700', color: COLORS.text }}>Shopping</Text>
-        {boughtCount > 0 ? (
-          <TouchableOpacity onPress={handleClearBought} disabled={clearMutation.isPending}>
-            <Text style={{ color: COLORS.primary, fontSize: 15, fontWeight: '600' }}>
-              Clear {boughtCount} done
-            </Text>
-          </TouchableOpacity>
-        ) : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+          {!instacartUnavailable && householdId && !householdError ? (
+            <TouchableOpacity onPress={orderViaInstacart} disabled={isOrdering}>
+              <Text style={{ color: COLORS.primary, fontSize: 15, fontWeight: '600' }}>
+                {isOrdering ? 'Opening…' : 'Order via Instacart'}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+          {boughtCount > 0 ? (
+            <TouchableOpacity onPress={handleClearBought} disabled={clearMutation.isPending}>
+              <Text style={{ color: COLORS.primary, fontSize: 15, fontWeight: '600' }}>
+                Clear {boughtCount} done
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
 
       {(isInitializing || isLoading) && !isRefetching ? (
