@@ -12,6 +12,7 @@ import { useScanReceipt, useScanItems } from '@/src/features/fridge/useScanFridg
 import { FridgeItemCard } from '@/src/features/fridge/FridgeItemCard';
 import { AddFridgeItemModal } from '@/src/features/fridge/AddFridgeItemModal';
 import { SpeedDialFAB } from '@/src/features/fridge/SpeedDialFAB';
+import { useRequirePremium } from '@/src/features/subscription/useRequirePremium';
 import { COLORS } from '@/src/lib/constants';
 import { logger } from '@/src/lib/logger';
 import type { FridgeItem } from '@/src/types/database';
@@ -24,6 +25,7 @@ export default function FridgeScreen() {
   const [householdError, setHouseholdError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const requirePremium = useRequirePremium();
 
   useEffect(() => {
     if (!user || householdId) return;
@@ -114,7 +116,7 @@ export default function FridgeScreen() {
   }
 
   function handleScanSource(type: 'receipt' | 'items') {
-    Alert.alert(
+    requirePremium(() => Alert.alert(
       type === 'receipt' ? 'Scan Receipt' : 'Photo of Items',
       'Choose a source',
       [
@@ -122,7 +124,7 @@ export default function FridgeScreen() {
         { text: 'Choose from Library', onPress: () => doScan(type, 'library') },
         { text: 'Cancel', style: 'cancel' },
       ]
-    );
+    ));
   }
 
   const isInitializing = !householdId && !householdError;

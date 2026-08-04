@@ -15,6 +15,10 @@ import {
   useUpdateDietaryRestrictions,
 } from '@/src/features/household/useHouseholdSharing';
 import { JoinHouseholdModal } from '@/src/features/household/JoinHouseholdModal';
+import { usePremium } from '@/src/features/subscription/usePremium';
+import { presentPaywallIfNeeded } from '@/src/features/subscription/presentPaywall';
+import { isPurchasesAvailable } from '@/src/lib/purchases';
+import Purchases from 'react-native-purchases';
 import { COLORS } from '@/src/lib/constants';
 
 const DIETARY_OPTIONS = [
@@ -41,6 +45,29 @@ export default function SettingsScreen() {
   const joinMutation = useJoinHousehold(user?.id ?? null);
   const leaveMutation = useLeaveHousehold(user?.id ?? null);
   const updateDietaryMutation = useUpdateDietaryRestrictions(householdId, user?.id ?? null);
+  const { isPremium, isLoading: isPremiumLoading, refresh: refreshPremium } = usePremium();
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  async function handleUpgrade() {
+    await presentPaywallIfNeeded();
+    await refreshPremium();
+  }
+
+  async function handleRestore() {
+    if (!isPurchasesAvailable()) {
+      Alert.alert("Restore isn't available right now", 'Try again later.');
+      return;
+    }
+    setIsRestoring(true);
+    try {
+      await Purchases.restorePurchases();
+      await refreshPremium();
+    } catch {
+      Alert.alert('Restore failed', 'Could not restore purchases. Try again.');
+    } finally {
+      setIsRestoring(false);
+    }
+  }
 
   async function handleSignOut() {
     setIsSigningOut(true);
@@ -267,6 +294,36 @@ export default function SettingsScreen() {
       <Text style={{ fontSize: 12, color: COLORS.muted, textAlign: 'center', marginBottom: 4 }}>
         Changes save automatically.
       </Text>
+
+      {/* ── Subscription Section ──────────────────── */}
+      <Text style={sectionLabel}>SUBSCRIPTION</Text>
+
+      <View style={row}>
+        <Text style={{ fontSize: 15, color: COLORS.muted }}>Status</Text>
+        {isPremiumLoading ? (
+          <ActivityIndicator color={COLORS.primary} />
+        ) : (
+          <Text style={{ fontSize: 15, fontWeight: '600', color: isPremium ? COLORS.success : COLORS.text }}>
+            {isPremium ? 'Premium' : 'Free'}
+          </Text>
+        )}
+      </View>
+
+      {!isPremium ? (
+        <TouchableOpacity onPress={handleUpgrade} style={row}>
+          <Text style={{ fontSize: 15, color: COLORS.text }}>Upgrade to Premium</Text>
+          <Text style={{ fontSize: 18, color: COLORS.primary }}>›</Text>
+        </TouchableOpacity>
+      ) : null}
+
+      <TouchableOpacity onPress={handleRestore} disabled={isRestoring} style={row}>
+        <Text style={{ fontSize: 15, color: COLORS.text }}>Restore Purchases</Text>
+        {isRestoring ? (
+          <ActivityIndicator color={COLORS.primary} />
+        ) : (
+          <Text style={{ fontSize: 18, color: COLORS.primary }}>›</Text>
+        )}
+      </TouchableOpacity>
 
       {/* ── Auth Section ──────────────────────────── */}
       <Text style={sectionLabel}>ACCOUNT</Text>

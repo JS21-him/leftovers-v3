@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { supabase } from '@/src/lib/supabase/client';
 import { useAuthStore } from '@/src/store/auth';
 import { logger } from '@/src/lib/logger';
+import { configurePurchases } from '@/src/lib/purchases';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,7 @@ export default function RootLayout() {
     if (isLoading) return;
     if (session) {
       router.replace('/(tabs)/fridge');
+      configurePurchases(session.user.id);
     } else {
       router.replace('/(auth)/login');
     }
